@@ -9,6 +9,9 @@ const int DirKa = 3;
 const int PwmKi = 5;
 const int PwmKa = 6;
 
+// Prevent runaway at first start
+bool hasStart = false;
+
 // Required dimensions of the vehicle for differential drive
 const
   float wheel_rad = 0.038, wheel_sep = 0.380,
@@ -47,12 +50,17 @@ T clamp(const T& v, const T& vmin, const T& vmax)
 
 void twistCallback(const geometry_msgs::Twist &msg)
 {
+  if (hasStart==false) {
+    hasStart = true;
+    return;
+  }
+  
   auto speed_angular = msg.angular.z;
   auto speed_linear  = msg.linear.x;
   auto w_r = speed_linear + ((speed_angular*track_length)/2.0);
   auto w_l = speed_linear - ((speed_angular*track_length)/2.0);
 
-  // Limit speed, then convert to duty cycle
+  // Limit speed, then convert to duty cycle (0-255)
   auto w_r_b = clamp((float)fabsf(w_r), 0.0f, max_linear_speed);
   auto w_l_b = clamp((float)fabsf(w_l), 0.0f, max_linear_speed);
   uint8_t w_rc = (uint8_t)(w_r_b * 255.0);
@@ -63,11 +71,11 @@ void twistCallback(const geometry_msgs::Twist &msg)
 
 void init_motor()
 {
-  pinMode(DirKi, OUTPUT);
+  
+  pinMode(PwmKa, OUTPUT);
   pinMode(PwmKi, OUTPUT);
   pinMode(DirKa, OUTPUT);
-  pinMode(PwmKa, OUTPUT);
-
+  pinMode(DirKi, OUTPUT);
 //  digitalWrite(DirKi, LOW);
 //  digitalWrite(PwmKi, LOW);
 //  digitalWrite(DirKa, LOW);
