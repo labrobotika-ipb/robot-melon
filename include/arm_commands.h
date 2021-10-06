@@ -22,7 +22,8 @@ class ArmCommand
         head = 0xfc,
         tail = 0xfd;
 
-    static void convertFLoatToByte(const float &v, uint8_t *t);
+    static void convertFLoatToByte(const float &v, uint8_t t[4]);
+    static float convertByteToFloat(uint8_t t[4]);
 };
 
 
@@ -35,14 +36,18 @@ class ArmCommand
 class LinearInterpCommand: public ArmCommand
 {
 public:
+    LinearInterpCommand() : ArmCommand()
+    { head = 0xee; tail = 0xef; }
+
+    command_t serialize();
 
 protected:
-    /*
-     * Fields
-     */
     const char 
         cmd = '1';
 
+/*
+ * Fields
+ */
 public:
     /*
      * PWM channels to be enabled in the end effector.
@@ -77,5 +82,52 @@ public:
     float speed = 0;
 
 };
+
+
+/*
+ * Linear interpolation positioning with acceleration & deceleration
+ * (corresponding to G220, G222 and G230)
+ */
+class LinearInterpAccelCommand: public ArmCommand
+{
+public:
+
+protected:
+    const char
+        cmd = '2';
+
+// Fields
+public:
+    enum accelOpt {
+        SINGLE,             // Accelerate/decelerate from 0 to speed1.
+                            // To decelerate, specify negative value to accel
+        ACCEL_THEN_DECEL,   // Accelerate from 0 to speed1 then decelerate to 0.
+                            // accel must be positive.
+        ABSOLUTE            // Accelerate from speed1 to speed2.
+                            // accel must be positive
+    };
+
+    float
+        // Coordinates of the end point, measured in mm
+        Xt = 0,
+        Yt = 0,
+        Zt = 0;
+    float
+        // Orientation of the end point
+        B0 = 0,
+        B1 = 0,
+        W = 0;
+
+    float
+        speed1 = 0,         // initial speed (mm/s ?)
+        accel = 0,          // acceleration. range is [-3200,+3200] (mm/s^2)
+        speed2 = 0;         // final speed (mm/s ?)
+};
+
+
+/*
+ * 3D arc interpolation command
+ * (corresponding to G300, G301)
+ */
 
 }
