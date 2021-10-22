@@ -8,9 +8,13 @@ const int DirKa = 3;
 // when pin 4 is used.
 const int PwmKi = 5;
 const int PwmKa = 6;
+const int EmergencyButtonPin = 7;
 
 // Prevent runaway at first start
 bool hasStart = false;
+
+// State of emergency button
+bool emergencyState;
 
 // Required dimensions of the vehicle for differential drive
 const
@@ -20,12 +24,24 @@ const
 
 ros::NodeHandle node;
 
+void emergencyCheck()
+{
+  int _btn = digitalRead(EmergencyButtonPin);
+  if (_btn==HIGH)
+    emergencyState = false;
+  else if(_btn==LOW)
+    emergencyState = true;
+}
+
 const int Kanan = 1;
 const int Kiri = 0;
 const int Maju = 2;
 const int Mundur = 3;
 void Jalan(unsigned char motor, unsigned char arah, unsigned char kec)
 {
+//  if (emergencyState==true)
+//    return;
+
   if(motor == Kanan){
     if(arah == Mundur) digitalWrite(DirKa,HIGH);
     else digitalWrite(DirKa,LOW);
@@ -69,27 +85,22 @@ void twistCallback(const geometry_msgs::Twist &msg)
   Jalan(Kiri, w_l>0 ? Maju : Mundur, w_lc);
 }
 
+
 void init_motor()
 {
-  
   pinMode(PwmKa, OUTPUT);
   pinMode(PwmKi, OUTPUT);
   pinMode(DirKa, OUTPUT);
   pinMode(DirKi, OUTPUT);
-//  digitalWrite(DirKi, LOW);
-//  digitalWrite(PwmKi, LOW);
-//  digitalWrite(DirKa, LOW);
-//  digitalWrite(PwmKa, LOW);
-//
-//  Jalan(Kiri, Maju, 0);
-//  Jalan(Kanan, Maju, 0);
-  delay(2000);
+  delay(1000);
 }
 
 ros::Subscriber<geometry_msgs::Twist> twistSub("cmd_vel", twistCallback);
 
 void setup() 
 {
+  pinMode(EmergencyButtonPin, INPUT);
+  emergencyCheck();
   init_motor();
   Serial.begin(57600);
   node.subscribe(twistSub);
@@ -97,5 +108,6 @@ void setup()
 
 void loop() 
 {
+  emergencyCheck();
   node.spinOnce();
 }
