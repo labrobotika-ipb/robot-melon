@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(mpu_9250_driver)
+project(mpu_9250)
 
 add_compile_options(-std=c++11 -frtti)
 
@@ -7,10 +7,14 @@ find_package(catkin REQUIRED COMPONENTS
 	roscpp
 	sensor_msgs
 )
+find_package(Eigen3 REQUIRED)
 
 catkin_package()
 
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(
+	${catkin_INCLUDE_DIRS}
+	${EIGEN3_INCLUDE_DIRS}
+)
 
 add_executable(
 	mpu_9250_driver

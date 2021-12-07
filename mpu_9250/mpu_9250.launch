@@ -1,0 +1,14 @@
+<launch>
+	<arg name="bus_number" default="12" />
+	<arg name="frame_id" default="imu" />
+	<arg name="imu_topic" default="imu" />
+	<arg name="magnetometer_topic" default="magnetometer" />
+	
+	<node name="mpu_9250" pkg="mpu_9250" type="mpu_9250_driver">
+		<param name="bus_number" value="(arg bus_number)" />
+		<param name="frame_id" value="(arg frame_id)" />
+		<param name="imu_topic" value="(arg imu_topic)" />
+		<param name="magnetometer_topic" value="(arg imu_topic)" /> 
+	</node>
+	
+</launch>
