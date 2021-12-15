@@ -1,14 +1,23 @@
 <launch>
 	<arg name="bus_number" default="12" />
+	<arg name="mpu6050_address" default="104" />
+	<arg name="sample_rate" default="100" />
 	<arg name="frame_id" default="imu" />
 	<arg name="imu_topic" default="imu" />
 	<arg name="magnetometer_topic" default="magnetometer" />
+	<arg name="local_gravity" default="9.82" />
+	<arg name="is_calibrating" default="false" />
+	<arg name="calibration_file" default="" />
 	
-	<node name="mpu_9250" pkg="mpu_9250" type="mpu_9250_driver">
-		<param name="bus_number" value="(arg bus_number)" />
-		<param name="frame_id" value="(arg frame_id)" />
-		<param name="imu_topic" value="(arg imu_topic)" />
-		<param name="magnetometer_topic" value="(arg imu_topic)" /> 
+	<node name="mpu_9250" pkg="mpu_9250" type="mpu_9250_driver" output="screen">
+		<param name="bus_number" value="$(arg bus_number)" />
+		<param name="mpu6050_address" value="$(arg mpu6050_address)" />
+		<param name="frame_id" value="$(arg frame_id)" />
+		<param name="imu_topic" value="$(arg imu_topic)" />
+		<param name="magnetometer_topic" value="$(arg magnetometer_topic)" /> 
+		<param name="local_gravity" value="$(arg local_gravity)" />
+		<param name="is_calibrating" value="$(arg is_calibrating)" />
+		<param name="calibration_file" value="$(arg calibration_file)" />
 	</node>
 	
 </launch>

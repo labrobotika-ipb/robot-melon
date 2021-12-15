@@ -1,0 +1,42 @@
+gyroscope:
+- !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - &id001 !!python/name:numpy.ndarray ''
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [2]
+  - &id002 !!python/object/apply:numpy.dtype
+    args: [f8, 0, 1]
+    state: !!python/tuple [3, <, null, null, null, -1, -1, 0]
+  - false
+  - !!binary |
+    wNhIoaKK6r+gL0KKshuyvw==
+- !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id001
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [2]
+  - *id002
+  - false
+  - !!binary |
+    BJJk8L7977+AuzZOGTmDPw==
+- !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id001
+  - !!python/tuple [0]
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple [2]
+  - *id002
+  - false
+  - !!binary |
+    B0lKqsLd7793zFAgt4SgPw==
