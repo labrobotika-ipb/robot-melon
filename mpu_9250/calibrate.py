@@ -1,5 +1,18 @@
 #!/usr/bin/python3
 
+"""
+Calibration How-To
+==================
+
+1. Launch driver node:
+   $ roslaunch mpu_9250 mpu_9250.launch bus_number:=<bus_number> mpu6050_address:=<device_address_in_i2c> is_calibrating:=1
+   Important: is_calibrating parameter is mandatory for calibration
+2. Run calibrate node:
+   $ rosrun mpu_9250 calibrate.py /imu:=/mpu_9250/imu
+   Follow instructions on the screen
+"""
+
+
 import rospy
 import numpy as np
 import yaml
@@ -8,6 +21,7 @@ from scipy.optimize import curve_fit
 from sensor_msgs.msg import Imu
 
 calibration_size = 500
+calibrate_output = '/tmp/calibration.yml'
 
 def collect_message(topicname, messageType, buffer_len=100):
     buffer = []
@@ -27,7 +41,7 @@ def collect_message(topicname, messageType, buffer_len=100):
 def calibrate_gyro():
     global calibration_size
     print("Gyroscope Calibration")
-    message_buffer = collect_message("imu", Imu, 99)
+    message_buffer = collect_message("imu", Imu, calibration_size)
     gyro_msgs = [[m.angular_velocity.x, m.angular_velocity.y, m.angular_velocity.z] for m in message_buffer]
     gyro_values = np.array(gyro_msgs)
     calb_values = np.average(gyro_values, axis=0)
@@ -42,14 +56,14 @@ def calibrate_accel():
 
     print("Accelerometer Calibration")
     mpu_offsets = [[],[],[]] # offset array to be printed
-    axis_vec = ['z','y','x'] # axis labels
+    axis_vec = ['Z','Y','X'] # axis labels
     cal_directions = ["upward","downward","perpendicular to gravity"] # direction for IMU cal
     cal_indices = [2,1,0] # axis indices
     for qq,ax_qq in enumerate(axis_vec):
         ax_offsets = [[],[],[]]
         print("-"*50)
         for direc_ii,direc in enumerate(cal_directions):
-            input("-"*8+" Press Enter and Keep IMU Steady to Calibrate the Accelerometer with the -"+\
+            input("-"*8+" Press Enter and Keep IMU Steady to Calibrate the Accelerometer with the "+\
               ax_qq+"-axis pointed "+direc)
             message_buffer = collect_message("imu", Imu, calibration_size) # clear buffer between readings
             mpu_array = []
@@ -76,8 +90,10 @@ if __name__ == '__main__' :
     gyro_offsets = calibrate_gyro()
     accel_offsets = calibrate_accel()
     
-    calib_file = open('/tmp/calibration.yml', 'w')
+    calib_file = open(calibrate_output, 'w')
     yaml.dump({'gyroscope': gyro_offsets, 'accelerometer': accel_offsets}, calib_file)
     calib_file.close()
+    
+    print("Output written to {}; Press CTRL+C to exit".format(calibrate_output))
     
     pass

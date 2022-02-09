@@ -1,0 +1,5 @@
+<launch>
+	<include file="mpu_9250.launch" ns="mpu_9250">
+	<node name="">
+	</node>
+</launch>

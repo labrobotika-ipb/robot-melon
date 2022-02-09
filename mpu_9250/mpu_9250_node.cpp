@@ -23,13 +23,13 @@ int main(int argc, char *argv[])
 	ros::NodeHandle dNode("~");
 
 	// Get parameters
-	int bus_number = dNode.param<int>("bus_number", 1);
+	int bus_number = dNode.param<int>("bus_number", -1);
 	int mpu6050_address = dNode.param<int>("mpu6050_address", 0x68);
 	int sample_rate = dNode.param<int>("sample_rate", 30);
 	string frame_id = dNode.param<string>("frame_id", "imu");
 	string imuTopic = dNode.param<string>("imu_topic", "imu");
 	string magnTopic = dNode.param<string>("magnetometer_topic", "magnetometer");
-	string calibrationFile = dNode.param<string>("calibraton_file", "/var/tmp/test.yml");
+	string calibrationFile = dNode.param<string>("calibration_file", "/var/tmp/test.yml");
 	float local_gravity = dNode.param<float>("local_gravity", 0);
 	bool is_calibrating = bool(dNode.param<int>("is_calibrating", false));
 

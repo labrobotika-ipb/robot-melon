@@ -5,6 +5,8 @@
  *      Author: sujiwo
  */
 
+#include <cmath>
+#include "tf2/LinearMath/Quaternion.h"
 #include "yaml-cpp/yaml.h"
 #include "mpu_driver.h"
 
@@ -20,6 +22,7 @@ MpuDriver::MpuDriver(int bus_num, const MpuConfig &cfg) :
 	devcfg(cfg)
 {
 	initialize(bus_num);
+	lastUpdate = ros::Time::now();
 }
 
 
@@ -33,13 +36,53 @@ MpuDriver::~MpuDriver()
 }
 
 
+void MpuDriver::MpuData::toRos(sensor_msgs::Imu &imudata) const
+{
+	imudata.orientation_covariance.fill(0);
+	imudata.orientation_covariance[0] = -1;
+
+	imudata.linear_acceleration.x = accel.x();
+	imudata.linear_acceleration.y = accel.y();
+	imudata.linear_acceleration.z = accel.z();
+
+	imudata.angular_velocity.x = gyro.x();
+	imudata.angular_velocity.y = gyro.y();
+	imudata.angular_velocity.z = gyro.z();
+
+	tf2::Quaternion q;
+	auto mOrient = mHeading * M_PI/180.0;
+	q.setRPY(mOrient.x(), mOrient.y(), mOrient.z());
+	imudata.orientation.w = q.w();
+	imudata.orientation.x = q.x();
+	imudata.orientation.y = q.y();
+	imudata.orientation.z = q.z();
+}
+
+
+void MpuDriver::MpuData::toRos (sensor_msgs::MagneticField &magn) const
+{
+	magn.magnetic_field.x = magneticField.x();
+	magn.magnetic_field.y = magneticField.y();
+	magn.magnetic_field.z = magneticField.z();
+}
+
+
+MpuDriver::Calibration::Calibration()
+{
+	gyro = Vector3::Zero();
+	accel << 1, 0,
+			1, 0,
+			1, 0;
+}
+
+
 MpuDriver::Calibration MpuDriver::Calibration::loadCalibration(const std::string &calibFile)
 {
 	Calibration cl;
 
 	YAML::Node calibnode = YAML::LoadFile(calibFile);
-	auto gyro = calibnode["gyro"];
-	auto accel = calibnode["accel"];
+	auto gyro = calibnode["gyroscope"];
+	auto accel = calibnode["accelerometer"];
 
 	cl.gyro.x() = gyro[0].as<float>();
 	cl.gyro.y() = gyro[1].as<float>();
@@ -70,10 +113,6 @@ bool MpuDriver::read_values(MpuData &data)
 	data.gyro.x() = devcfg.gyro_sensitivity * static_cast<float>(static_cast<short>(read_raw_words(mpu9250_fd, GYRO_XOUT_H))) /32768.0f;
 	data.gyro.y() = devcfg.gyro_sensitivity * static_cast<float>(static_cast<short>(read_raw_words(mpu9250_fd, GYRO_YOUT_H))) /32768.0f;
 	data.gyro.z() = devcfg.gyro_sensitivity * static_cast<float>(static_cast<short>(read_raw_words(mpu9250_fd, GYRO_ZOUT_H))) /32768.0f;
-	// to rad/s, when not calibrating
-	if (devcfg.is_calibrating==false) {
-		data.gyro = (data.gyro - devcfg.dCalibration.gyro) * M_PI/180.0;
-	}
 
 	if (mHasMagnetometer) {
 		auto hx = read_raw_words(ak8963_fd, HXH-1, false);
@@ -96,6 +135,15 @@ bool MpuDriver::read_values(MpuData &data)
 			data.magneticField.y() = static_cast<float>(static_cast<short>(hy)) / resolution;
 			data.magneticField.z() = static_cast<float>(static_cast<short>(hz)) / resolution;
 		}
+	}
+
+	auto timeDiff = ros::Time::now() - lastUpdate;
+	update_orientation(data, timeDiff);
+	data.mHeading = mHeading;
+
+	// to rad/s, when not calibrating
+	if (devcfg.is_calibrating==false) {
+		data.gyro = (data.gyro - devcfg.dCalibration.gyro) * M_PI/180.0;
 	}
 
 	return true;
@@ -310,4 +358,14 @@ float MpuDriver::set_dlpf_frequencies(
 
     // Return the actual sample frequency.
     return internal_frequency / static_cast<float>(frequency_divider);
+}
+
+
+void MpuDriver::update_orientation(MpuData &data, const ros::Duration &timediff)
+{
+	auto rotation = data.gyro * timediff.toSec();
+	mHeading += rotation;
+	mHeading.x() = fmodf(mHeading.x(), 360.0);
+	mHeading.y() = fmodf(mHeading.y(), 360.0);
+	mHeading.z() = fmodf(mHeading.z(), 360.0);
 }

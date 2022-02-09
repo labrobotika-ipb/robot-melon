@@ -10,7 +10,7 @@
 	<arg name="calibration_file" default="" />
 	
 	<node name="mpu_9250" pkg="mpu_9250" type="mpu_9250_driver" output="screen">
-		<param name="bus_number" value="$(arg bus_number)" />
+		<param name="bus_number" type="int" value="$(arg bus_number)" />
 		<param name="mpu6050_address" value="$(arg mpu6050_address)" />
 		<param name="frame_id" value="$(arg frame_id)" />
 		<param name="imu_topic" value="$(arg imu_topic)" />

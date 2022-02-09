@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #define M_G 9.81f
 
@@ -27,6 +28,7 @@ public:
 	typedef Eigen::Vector3f Vector3;
 	typedef Eigen::Vector4f Vector4;
 	typedef Eigen::Matrix4f Matrix4;
+	typedef Eigen::Quaternionf Quaternion;
 
 	struct MpuData {
 		Vector3
@@ -35,28 +37,17 @@ public:
 			magneticField = Vector3::Zero();
 		float temperature = 0;
 
-		void toRos (sensor_msgs::Imu &imudata)
-		{
-			imudata.linear_acceleration.x = accel.x();
-			imudata.linear_acceleration.y = accel.y();
-			imudata.linear_acceleration.z = accel.z();
+		// In roll/pitch/yaw, degrees
+		Vector3 mHeading = Vector3::Zero();
 
-			imudata.angular_velocity.x = gyro.x();
-			imudata.angular_velocity.y = gyro.y();
-			imudata.angular_velocity.z = gyro.z();
-		}
+		void toRos (sensor_msgs::Imu &imudata) const;
 
-		void toRos (sensor_msgs::MagneticField &magn)
-		{
-			magn.magnetic_field.x = magneticField.x();
-			magn.magnetic_field.y = magneticField.y();
-			magn.magnetic_field.z = magneticField.z();
-		}
+		void toRos (sensor_msgs::MagneticField &magn) const;
 
-		void toRos (sensor_msgs::Temperature &temp)
+		void toRos (sensor_msgs::Temperature &temp) const
 		{ temp.temperature = temperature; }
 
-		void toRos (sensor_msgs::Imu &imu, sensor_msgs::MagneticField &magn, sensor_msgs::Temperature &temp)
+		void toRos (sensor_msgs::Imu &imu, sensor_msgs::MagneticField &magn, sensor_msgs::Temperature &temp) const
 		{ toRos(imu); toRos(magn); toRos(temp); }
 	};
 
@@ -66,6 +57,8 @@ public:
 		// Accelerometer calibration values are expressed in matrix 3x2, one row for each axis;
 		// To fit the new axis value: x = x*x_1 + x_2
 		Eigen::Matrix<float,3,2> accel;
+
+		Calibration();
 
 		static Calibration loadCalibration(const std::string &path);
 	};
@@ -172,6 +165,8 @@ private:
 		ak8963_fd = -1;
 	bool mHasMagnetometer = false;
 
+	Vector3 mHeading = Vector3::Zero();
+
 	// Default full-scale range
 	float
 		accel_scale = 2.0f,			// 2G
@@ -181,12 +176,15 @@ private:
 
 	Calibration dCalib;
 
+	ros::Time lastUpdate;
+
 protected:
 	static bool read_registers(int dev_fd, uint register_address, uint num_bytes, std::vector<uint8_t> &buffer);
 	static int8_t read_register(int dev_fd, uint register_address);
 	static bool write_register(int dev_fd, uint register_address, int8_t w);
 	static uint16_t read_raw_words(int dev_fd, uint register_address, bool isBigEndian=true);
 	void initialize(int bus_num);
+	void update_orientation(MpuData &data, const ros::Duration &timediff);
 };
 
 #endif /* MPU_9250_MPU_DRIVER_H_ */
